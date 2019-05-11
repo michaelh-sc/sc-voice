@@ -114,8 +114,10 @@ export default {
         playTrack(iTrack, paused=false) {
             paused = paused || this.pauseAudio();
             if (iTrack < 0 || this.section && this.tracks.length <= iTrack) {
-                console.log(`playTrack(${iTrack}) ignored`);
-                return;
+                var msg = `playTrack(${iTrack}) ignored `+
+                    `iTrack:${iTrack} tracks:${this.tracks.length}`;
+                this.playStartEndSound(msg);
+                return Promise.reject(new Error(msg));
             }
             Vue.set(this, "iTrack", iTrack);
             Vue.set(this, "iSegment", 0);
@@ -190,24 +192,44 @@ export default {
                 '--success-color': this.$vuetify.theme.success,
             }, opts);
         },
+        endAudio() {
+            var {
+                iSegment,
+                iTrack,
+            } = this;
+            this.paused = true;
+            var evt = JSON.stringify(event);
+            console.log(`onEndLang(${evt}) seg:${iSegment} track:${iTrack}`);
+            var introAudio = this.$refs[`refIntroSound`];
+            introAudio.load();
+            introAudio.play();
+        },
         onEndLang(event) {
+            var {
+                paused,
+                iSegment,
+                tracks,
+                section,
+                iTrack,
+            } = this;
             this.setTextClass();
-            if (this.paused) {
-                console.log(`onEndLang() finished`, event);
+            if (!paused && iSegment < section.segments.length-1) {
+                this.paused = true;
+                Vue.set(this, "iSegment", iSegment+1);
+                this.$nextTick(() => {
+                    this.toggleAudio();
+                });
+            } else if (!paused && iTrack+1 < tracks.length) {
+                this.paused = true;
+                const NEW_SECTION_PAUSE = 1000;
+                setTimeout(() => {
+                    this.playTrack(iTrack+1, true);
+                }, NEW_SECTION_PAUSE);
             } else {
                 this.paused = true;
-                if (this.iSegment < this.section.segments.length-1) {
-                    Vue.set(this, "iSegment", this.iSegment+1);
-                    //console.log(`onEndLang() incrementing segment: ${this.iSegment}`);
-                    this.$nextTick(() => {
-                        this.toggleAudio();
-                    });
-                } else if (this.iTrack < this.tracks.length) {
-                    const NEW_SECTION_PAUSE = 1000;
-                    setTimeout(() => {
-                        this.playTrack(this.iTrack+1, true);
-                    }, NEW_SECTION_PAUSE);
-                }
+                var evt = JSON.stringify(event);
+                console.log(`onEndLang(${evt}) seg:${iSegment} track:${iTrack}`);
+                this.playStartEndSound('onEndLang');
             }
         },
         onEndPali(event) {
@@ -262,28 +284,40 @@ export default {
                 });
             } catch(e) {reject(e);} });
         },
-        launch(iTrack) {
-            var introAudio = this.$refs[`refIntroSound`];
+        playStartEndSound(label) {
             var that = this;
-            if (introAudio) {
-                var onEndIntro = () => {
-                    onEndIntro && introAudio.removeEventListener("ended", onEndIntro);
-                    onEndIntro = null;
-                    if (that.paused) {
-                        that.clickPlayPause();
+            return new Promise((resolve, reject) => { try {
+                var introAudio = that.$refs[`refIntroSound`];
+                if (introAudio) {
+                    var onEndIntro = () => {
+                        onEndIntro && introAudio.removeEventListener("ended", onEndIntro);
+                        onEndIntro = null;
+                        resolve(that.paused);
                     }
+                    introAudio.addEventListener("ended", onEndIntro);
+                    var ips = that.ipsChoices[that.gscv.ips];
+                    console.log(`playStartEndSound(${label}) introAudio:${ips.label}`);
+                    introAudio.volume = ips.volume;
+                    introAudio.load();
+                    introAudio.play();
+                } else {
+                    resolve(false);
                 }
-                introAudio.addEventListener("ended", onEndIntro);
-                var ips = this.ipsChoices[this.gscv.ips];
-                introAudio.volume = ips.volume;
-                introAudio.load();
-                introAudio.play();
-                this.playTrack(iTrack);
-            } else {
-                this.playTrack(iTrack).then(() => {
-                    that.clickPlayPause();
-                });
-            }
+            } catch(e) {reject(e);} });
+        },
+        launch(iTrack) {
+            var that = this;
+            that.playStartEndSound('launch').then((play) => {
+                play && that.clickPlayPause();
+            });
+            var introAudio = that.$refs[`refIntroSound`];
+            that.playTrack(iTrack).then(() => { try {
+                if (!introAudio) {
+                    that.paused && that.clickPlayPause();
+                }
+            } catch (e) {
+                console.error(e.stack);
+            }});
         },
         clickPlayPause() {
             console.log(`clickPlayPause() ${this.paused ? "play" : "pause"}`);
@@ -451,8 +485,15 @@ export default {
             }, 0) || 0;
         },
         timeRemaining(){
-            var remaining = this.segmentsTotal - this.segmentsElapsed;
-            return this.gscv && this.gscv.duration(remaining).display || '--';
+            var {
+                gscv,
+                tracks,
+                iTrack,
+                iSegment,
+            } = this;
+            var tr =  gscv && tracks &&
+                gscv.timeRemaining(tracks, iTrack, iSegment);
+            return tr && tr.display || '--';
         },
         ipsChoices() {
             return this.gscv.ipsChoices;

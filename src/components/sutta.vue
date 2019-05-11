@@ -190,13 +190,16 @@
                                 class="scv-a"
                                 v-on:click="clickTranslation(translation,$event)">
                                 {{translation.author}}
-                                &nbsp;&bull;&nbsp;
-                                {{translation.lang_name}}
+                                ({{translation.lang_name}})
                             </a>
                         </div>
-                        <div class="text-xs-center" v-if="hasAudio">
-                            <a class="scv-a" :href="audioUrl" target="_blank">
-                                {{sutta_uid.toUpperCase()}} audio recordings
+                        <div class="text-xs-center" v-if="supportedAudio.length">
+                            Audio:
+                            <a class="scv-a" :href="audio.url" 
+                                v-for="(audio,i) in supportedAudio" :key="`audio${i}`"
+                                target="_blank">
+                                <span v-if="i">&#x2022;</span>
+                                {{audio.source}}
                             </a>
                         </div>
                         <div class="text-xs-center">
@@ -302,6 +305,7 @@ export default {
                 value: '(n/a)',
                 descriptions: '(n/a)',
             },
+            supportedAudio: [],
             sutta: {},
             suttaplex: {},
             suttaCode: '',
@@ -396,6 +400,7 @@ export default {
         },
         playOne(result) {
             this.tracks = this.suttaTracks(result.sutta);
+            console.log('dbg playOne');
             this.launchSuttaPlayer();
         },
         playAll() {
@@ -568,6 +573,7 @@ export default {
             }
         },
         showSutta(sutta) {
+            var that = this;
             this.clear();
             var sections = this.sections = sutta.sections;
             Object.assign(this.support, sutta.support);
@@ -591,14 +597,28 @@ export default {
             var seg0 = sections[0] && sections[0].segments[0] || {};
             this.sutta.collection = `${seg0.pli} / ${seg0.en}`;
             this.sutta.author = translation.author;
+            var {
+                sutta_uid,
+                language,
+                translator,
+            } = this;
             this.tracks = sections.map((sect,i) => ({
-                sutta_uid: this.sutta_uid,
+                sutta_uid,
                 title: this.sutta.title,
-                language: this.language,
-                translator: this.translator,
+                language,
+                translator,
                 iSection: i,
                 nSegments: sect.segments.length,
+                segments: sect.segments,
             }));
+            ['pli', language].forEach(lang => {
+                var url = that.url(`/audio-urls/${sutta_uid}`);
+                that.$http.get(url).then(res => {
+                    Vue.set(that, "supportedAudio", res.data);
+                }).catch(e => {
+                    console.error('supported audio:', url, e.stack, lang);
+                });
+            });
             this.$nextTick(() => {
                 var refPlaySutta = this.$refs.refPlaySutta;
                 if (refPlaySutta) {
@@ -760,7 +780,7 @@ export default {
         },
     },
     computed: {
-        audioUrl() {
+        otherAudioUrl() {
             return `https://github.com/sc-voice/sc-voice/wiki/Audio-${this.sutta_uid}`;
         },
         cookies() {

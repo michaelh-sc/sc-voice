@@ -15,6 +15,7 @@
     const RE_PARA_EOL = /^\n\n+$/u;
     const RE_NUMBER = new RegExp(Words.PAT_NUMBER);
     const RE_STRIPNUMBER = new RegExp(`\\(?${Words.PAT_NUMBER}\\)?`);
+    const MAX_SEGMENT = 1000;
 
     class AbstractTTS {
         constructor(opts={}) {
@@ -33,9 +34,10 @@
             this.queue = new Queue(opts.maxConcurrentServiceCalls || 5, Infinity);
             this.usage = opts.usage || "recite";
             this.maxSSML = opts.maxSSML || 5000;
-            this.maxSegment = opts.maxSegment || 1000;
+            this.maxSegment = opts.maxSegment || MAX_SEGMENT;
             this.maxCuddle = opts.maxCuddle || 1;
             this.usages = opts.usages || {};
+            this.customWords = opts.customWords;
             this.syllableVowels = opts.syllableVowels;
             this.syllabifyLength = opts.syllabifyLength;
             this.mj = new MerkleJson({
@@ -109,7 +111,12 @@
             if (wordValue && typeof wordValue === 'string') { // synonym
                 wordValue = this.wordInfo(wordValue);
             }
-            return wordValue || null;
+            if (!wordValue) {
+                return null;
+            }
+            var customWord = this.customWords && this.customWords[word];
+            customWord && Object.assign(wordValue, customWord);
+            return wordValue;
         }
 
         ipa_word(ipa, word) {
@@ -221,8 +228,10 @@
                 var tnumber = !tword && this.words.isNumber(token);
                 var seglen = acc.segment.length;
                 var maxCuddle = this.maxCuddle;
-                var overflow = this.maxSegment && (seglen + tlen + maxCuddle > this.maxSegment);
-                if (!this.cuddle && overflow) {
+                var overflow = this.maxSegment 
+                    ? seglen + tlen + maxCuddle > this.maxSegment
+                    : false;
+                if (!this.cuddle && overflow && tword) {
                     acc.segments.push(acc.segment);
                     acc.segment = token;
                     acc.cuddle = null;

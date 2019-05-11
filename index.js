@@ -1,5 +1,6 @@
 module.exports = {
     AbstractTTS: require("./src/node/abstract-tts"),
+    AudioUrls: require("./src/node/audio-urls"),
     Cursor: require('./src/node/cursor'),
     Definitions: require('./src/node/definitions'),
     MdAria: require("./src/node/md-aria"),
@@ -17,7 +18,9 @@ module.exports = {
     SuttaSearcher: require('./src/node/sutta-searcher'),
     SuttaStore: require('./src/node/sutta-store'),
     Sutta: require("./src/node/sutta"),
+    S3Bucket: require('./src/node/s3-bucket'),
     Voice: require('./src/node/voice'),
+    VsmStore: require('./src/node/vsm-store'),
     Watson: require("./src/node/watson"),
     Words: require('./src/node/words'),
 

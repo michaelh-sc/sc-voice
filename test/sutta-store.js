@@ -212,6 +212,11 @@
                 results,
             } = await store.search('is the root of suffering');
             should(results).instanceOf(Array);
+            should.deepEqual(Object.keys(results[0]).sort(), [
+                'count', 'uid', 'author', 'author_short', 'author_uid',
+                'author_blurb', 'lang', 'nSegments', 'title', 'collection_id',
+                'suttaplex', 'quote', 'sutta', 'audio',
+            ].sort());
             should(method).equal('phrase');
             should.deepEqual(results.map(r=>r.count), [5, 3, 2, 1]);
             should.deepEqual(results.map(r=>r.uid), [
@@ -778,6 +783,9 @@
             var store = await new SuttaStore().initialize();
 
             should.deepEqual( store.suttaList(
+                ['sn 45.161']), // spaces
+                ['sn45.161']);
+            should.deepEqual( store.suttaList(
                 ['MN 1-3/en/sujato']), // spaces
                 ['mn1/en/sujato', 'mn2/en/sujato', 'mn3/en/sujato']);
             should.deepEqual( store.suttaList(
@@ -835,6 +843,10 @@
         this.timeout(5*1000);
         (async function() { try {
             var store = await new SuttaStore().initialize();
+
+            // spaces
+            var data = await store.search({ pattern: 'sn 45.161', });
+            should.deepEqual(data.results.map(r=>r.uid), ['sn45.161']);
 
             // fully specified unsupported
             var data = await store.search({ pattern: 'mn1/en/bodhi', });
@@ -984,7 +996,11 @@
             ]);
             should.deepEqual(playlist.stats(), {
                 tracks: 4,
-                duration: 687,
+                chars: {
+                    en: 3086,
+                    pli: 2370,
+                },
+                duration: 483,
                 segments: {
                     pli: 40,
                     en: 38,
@@ -1006,7 +1022,10 @@
             ]);
             should.deepEqual(playlist.stats(), {
                 tracks: 4,
-                duration: 450,
+                chars: {
+                    pli: 2370,
+                },
+                duration: 216,
                 segments: {
                     pli: 40,
                 }
@@ -1025,7 +1044,10 @@
             var playlist = await store.createPlaylist({ pattern: 'an3.76-77', });
             should.deepEqual(playlist.stats(), {
                 tracks: 1,
-                duration: 7,
+                chars: {
+                    en: 83,
+                },
+                duration: 8,
                 segments: {
                     en: 1, // error message
                 }
@@ -1047,7 +1069,10 @@
             });
             should.deepEqual(playlist.stats(), {
                 tracks: 4,
-                duration: 450,
+                chars: {
+                    pli: 2370,
+                },
+                duration: 216,
                 segments: {
                     pli: 40,
                 }
@@ -1089,6 +1114,44 @@
             should.deepEqual(store.sutta_uidSearch("an1.2-11").uids, [
                 "an1.1-10", "an1.11-20"]);
 
+
+            done(); 
+        } catch(e) {done(e);} })();
+    });
+    it("nikaySuttaIds(...) returns sutta_uids", function(done) {
+        (async function() { try {
+            var store = await new SuttaStore({
+                maxDuration: 450,
+            }).initialize();
+            var language = 'en';
+            const KNSTART = [
+                'thag1.1', 'thag1.2', 'thag1.3',
+            ];
+            const KNEND = [
+                'thig14.1', 'thig15.1', 'thig16.1',
+            ];
+
+            // nikaya, language, author/translator
+            var ids = await store.nikayaSuttaIds('kn', 'en', 'sujato');
+            should(ids).instanceOf(Array);
+            should.deepEqual(ids.slice(0,3), KNSTART);
+            should.deepEqual(ids.slice(ids.length-3,ids.length), KNEND);
+
+            // Pali is in English folder
+            var ids = await store.nikayaSuttaIds('kn', 'pli', 'sujato');
+            should(ids).instanceOf(Array);
+            should.deepEqual(ids.slice(0,3), KNSTART);
+            should.deepEqual(ids.slice(ids.length-3,ids.length), KNEND);
+
+            // nikaya
+            var ids = await store.nikayaSuttaIds('kn');
+            should(ids).instanceOf(Array);
+            should.deepEqual(ids.slice(0,3), KNSTART);
+            should.deepEqual(ids.slice(ids.length-3,ids.length), KNEND);
+
+            // Bad input
+            var ids = await store.nikayaSuttaIds('nonikaya', 'yiddish', 'nobody');
+            should.deepEqual(ids, []);
 
             done(); 
         } catch(e) {done(e);} })();

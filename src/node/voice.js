@@ -29,9 +29,11 @@
             this.ipa = opts.ipa || {};
             this.pitch = opts.pitch || "-0%";
             this.usage = opts.usage || 'recite';
-            this.usages = opts.usages;
+            this.usages = opts.usages || {[this.usage]:{}};
+            this.customWords = opts.customWords;
             this.syllableVowels = opts.syllableVowels;
             this.syllabifyLength = opts.syllabifyLength;
+            this.maxSegment = opts.maxSegment;
             Object.defineProperty(this, '_services', {
                 writable: true,
                 value: opts.services || null,
@@ -133,7 +135,9 @@
                             stripNumbers: this.stripNumbers,
                             stripQuotes: this.stripQuotes,
                             voice: this.name,
+                            customWords: this.customWords,
                             soundStore: this.soundStore,
+                            maxSegment: this.maxSegment,
                             usage: key,
                             breaks: usage.breaks,
                             syllableVowels: this.syllableVowels,

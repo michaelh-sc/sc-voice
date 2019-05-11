@@ -104,7 +104,15 @@
             "breaks": [0.001,0.1,0.2,0.4,0.5]
         }
     },
+    "customWords": {
+        "detached": { 
+            "ipa": "dɛtat͡ʃd"
+        }
+    },
     "ipa": {
+        "en": {
+            "detached":"dɛtat͡ʃd"
+        },
         "pli": {
             "a": "\u0250",
             "a$": "a",
@@ -152,8 +160,12 @@
     "language": "hi-IN",
     "service": "aws-polly",
     "name": "Aditi",
+    "maxSegment": 400,
     "syllableVowels": "aeiouāīū",
     "syllabifyLength": 5,
+    "stripNumbers": true,
+    "stripQuotes": true,
+    "languageUnknown": "pli",
     "gender": "female",
     "pitch": "-10%",
     "fullStopComma": true,
@@ -189,19 +201,22 @@
             "be": "bẽ",
             "bh": "b\u02b0",
             "d": "d̪",
+            "ud": "ʊɖ",
             "dh": "ɖʱ",
-            "dha": "ɖhə̃",
+            "d h": "ɖʱ",
+            "dha": "ɖʱə",
             "ḍ": "ɖ",
             "^e": "ẽ",
             "se": "sẽ",
-            "ve ": "ʋẽ ",
             "ey y": "e j j",
             "\u012b": "i\u02d0",
             "gh": "g\u02b0",
+            "g h": "g\u02b0",
             "i": "ɪ",
             "j": "\u029d",
             "jj": "\u029d.\u029d",
             "jha": "\u0284h\u0251",
+            "j jh": "dʒ dʒʱ",
             "kh": "k\u02b0",
             "kk": "k.k",
             "kkh": "k.k\u02b0",
@@ -228,9 +243,13 @@
             "tth": "t̪.t̪ʰ",
             "ṭ": "ʈ",
             "ṭṭh": "ʈ.ʈʰ",
-            "u":"ʊ",
+            "u": "ʊ",
             "ū": "u:",
-            "v": "ʋ",
+            "ve": "v\\e",
+            "va": "v\\ə",
+            "vā": "v\\ɑː",
+            "vi": "v\\ɪ",
+            "vo": "v\\o",
             "yi": "'ji",
             "y": "j"
         }

@@ -223,7 +223,7 @@
         static isUidPattern(pattern) {
             var commaParts = pattern.toLowerCase().split(',').map(p=>p.trim());
             return commaParts.reduce((acc,part) => {
-                return acc && /^[a-z]+[0-9]+[-0-9a-z.:\/]*$/i.test(part);
+                return acc && /^[a-z]+ ?[0-9]+[-0-9a-z.:\/]*$/i.test(part);
             }, true);
         }
 
@@ -284,6 +284,7 @@
             var cmd = `grep -rciE '${grex}' `+
                 `--exclude-dir=examples `+
                 `--exclude-dir=.git `+
+                `--exclude='*.md' `+
                 `|grep -v ':0'`+
                 `|sort -g -r -k 2,2 -k 1,1 -t ':'`;
             maxResults && (cmd += `|head -${maxResults}`);
@@ -574,10 +575,10 @@
             return lines.length && lines.map(line => {
                 var iColon = line.indexOf(':');
                 var fname = path.join(ROOT,line.substring(0,iColon));
-                var fnameparts = fname.split('/');
-                var collection_id = fnameparts[fnameparts.length-4];
-                var text = fs.readFileSync(fname);
                 try {
+                    var fnameparts = fname.split('/');
+                    var collection_id = fnameparts[fnameparts.length-4];
+                    var text = fs.readFileSync(fname);
                     var json = JSON.parse(text);
                     var sutta = new Sutta(json);
                 } catch(e) {
@@ -919,6 +920,32 @@
                         method,
                         results,
                         resultPattern,
+                    });
+                } catch(e) {reject(e);} })();
+            });
+        }
+
+        nikayaSuttaIds(nikaya, language='en', author='sujato') {
+            var that = this;
+            return new Promise((resolve, reject) => {
+                (async function() { try {
+                    var nikayaPath = path.join(that.root, nikaya);
+                    var lang = language === 'pli' ? 'en' : language;
+                    var langPath = path.join(nikayaPath, lang, author);
+                    fs.readdir(langPath, null, (err, files) => {
+                        if (err) {
+                            logger.info(`nikayaSuttaIds(${nikaya}) ${err.message}`);
+                            resolve([]);
+                        } else {
+                            var sutta_uids = files.reduce((acc,f) => {
+                                if (f.endsWith('.json')) {
+                                    acc.push(f.replace(/\.json/u, ''));
+                                }
+                                return acc;
+                            }, []);
+                            var cmp = SuttaCentralId.compareLow;
+                            resolve(sutta_uids.sort(cmp));
+                        }
                     });
                 } catch(e) {reject(e);} })();
             });

@@ -52,6 +52,7 @@
                 res.statusCode.should.equal(200);
                 var keys = Object.keys(res.body).sort();
                 should.deepEqual(keys, [
+                    'diskavail', 'diskfree', 'disktotal',
                     'freemem', 'hostname', 'loadavg', 'name', 
                     'package', 'totalmem', 'uptime', 'version'
                 ]);
@@ -339,7 +340,7 @@
             done();
         } catch(e) {done(e);} })();
     });
-    it("TESTTESTGET /play/segment/... returns playable segment", function(done) {
+    it("GET /play/segment/... returns playable segment", function(done) {
         this.timeout(30*1000);
         (async function() { try {
             var iVoice = 0;
@@ -349,7 +350,7 @@
             res.statusCode.should.equal(200);
             var data = res.body instanceof Buffer ? JSON.parse(res.body) : res.body;
             should(data.segment.en).match(/^Middle Discourses 1/);
-            should(data.segment.audio.pli).match(/^c102b/); // no numbers
+            should(data.segment.audio.pli).match(/6ba33aa963c46b629d0ec036d570ef19/); // no numbers
 
             if (0) {
                 var scid = "mn1:52-74.23";
@@ -405,7 +406,7 @@
             done();
         } catch(e) {done(e);} })();
     });
-    it("TESTTESTGET /play/segment/... handles large segment", function(done) {
+    it("GET /play/segment/... handles large segment", function(done) {
         this.timeout(30*1000);
         (async function() { try {
             var scid = "an2.280-309:281.1.1";
@@ -426,7 +427,7 @@
             should(data.translator).equal('sujato');
             should(data.segment.en).match(/^.For two reasons the Realized One/);
             should(data.segment.audio.en).match(/^7120fcf/);
-            should(data.segment.audio.pli).match(/^837cc/);
+            should(data.segment.audio.pli).match(/a0b4f88de826346a033a8cc63617e25a/);
 
             done();
         } catch(e) {done(e);} })();
@@ -523,6 +524,24 @@
                 .send(data);
             res.statusCode.should.equal(500);
             logger.error(`EXPECTED ERROR END`);
+
+            done();
+        } catch(e) {done(e);} })();
+    });
+    it("GET audio-url/... returns supported audio url", function(done) {
+        this.timeout(3*1000);
+        (async function() { try {
+            // short url
+            var url = '/scv/audio-urls/sn1.23';
+            var res = await supertest(app).get(url)
+            res.statusCode.should.equal(200);
+
+            should.deepEqual(res.body.map(src=>src.url), [
+                'https://sc-opus-store.sgp1.cdn.digitaloceanspaces.com/'+
+                    'pli/sn/sn1/sn1.23-pli-mahasangiti-sujato.webm',
+                'https://sc-opus-store.sgp1.cdn.digitaloceanspaces.com/'+
+                    'en/sn/sn1/sn1.23-en-sujato-sujato.webm',
+            ]);
 
             done();
         } catch(e) {done(e);} })();
