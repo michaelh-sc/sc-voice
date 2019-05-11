@@ -7,11 +7,13 @@
     "test": "test"
   },
   "dependencies": {
+    "ajv": "^6.10.0",
     "aws-sdk": "^2.294.0",
     "axios": "^0.18.0",
     "axis": "^1.0.0",
     "compression": "^1.7.3",
     "credential": "^2.0.0",
+    "diskusage": "^1.1.1",
     "express": "^4.16.3",
     "express-jwt": "^5.3.1",
     "merkle-json": "^1.1.4",
